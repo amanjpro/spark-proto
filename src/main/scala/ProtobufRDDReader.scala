@@ -1,4 +1,4 @@
-package me.amanj.spark.protobuf.reader
+package me.amanj.spark.proto.reader
 
 
 import org.apache.hadoop.mapreduce.lib.input.{FileSplit,FileInputFormat}
