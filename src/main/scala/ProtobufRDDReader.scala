@@ -17,7 +17,7 @@ class ProtobufRDDReader(val sc: SparkContext) {
 
     val hadoopConf = sc.hadoopConfiguration
     val job = Job.getInstance
-    job.setInputFormatClass(classOf[PBInputFormat[K]])
+    job.setInputFormatClass(classOf[ProtobufInputFormat[K]])
     val hadoopPath = new Path(input)
     FileInputFormat.setInputDirRecursive(job, true)
     hadoopConf.addResource(job.getConfiguration)
@@ -27,7 +27,7 @@ class ProtobufRDDReader(val sc: SparkContext) {
     // -- Amanj
     if (hadoopPath.getFileSystem(hadoopConf).exists(hadoopPath)) {
       sc.newAPIHadoopFile(input,
-                           classOf[PBInputFormat[K]],
+                           classOf[ProtobufInputFormat[K]],
                            keyClass,
                            classOf[NullWritable],
                            hadoopConf)
@@ -41,18 +41,18 @@ class ProtobufRDDReader(val sc: SparkContext) {
       .map { case (k, _) => k }
 }
 
-class PBInputFormat[K <: Message] extends FileInputFormat[K, NullWritable] {
+class ProtobufInputFormat[K <: Message] extends FileInputFormat[K, NullWritable] {
   // Even though it might be not so efficient, we do not let hadoop/spark to
   // split protobuf files, that is how the record reader is set to work
   override def isSplitable(job: JobContext, path: Path): Boolean = false
 
   override def createRecordReader(split: InputSplit,
     context: TaskAttemptContext): RecordReader[K, NullWritable] = {
-    new PBRecordReader
+    new ProtobufRecordReader
   }
 }
 
-class PBRecordReader[K <: Message] extends RecordReader[K, NullWritable] {
+class ProtobufRecordReader[K <: Message] extends RecordReader[K, NullWritable] {
 
   protected var start: Long = _
   protected var end: Long   = _
