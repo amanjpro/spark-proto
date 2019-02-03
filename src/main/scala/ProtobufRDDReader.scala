@@ -12,7 +12,7 @@ import java.util.UnknownFormatConversionException
 import java.io.InputStream
 import scala.reflect.{ClassTag, classTag}
 
-class ProtobufRDDReader[K <: Message : ClassTag](val sc: SparkContext)(implicit parser: InputStream => K) {
+class ProtobufRDDReader[K <: Message : ClassTag](val sc: SparkContext, parser: InputStream => K) {
   self =>
   private[this] class SpecificProtobufInputFormat extends ProtobufInputFormat[K] {
     val parser = self.parser
