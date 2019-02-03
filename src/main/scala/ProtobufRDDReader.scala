@@ -9,11 +9,11 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import com.google.protobuf.Message
 import java.util.UnknownFormatConversionException
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 
-class ProtobufRDDReader[K <: Message](val sc: SparkContext) extends AnyVal {
+class ProtobufRDDReader(val sc: SparkContext) {
 
-  private[this] def read(input: String, keyClass: Class[K]): RDD[(K, NullWritable)] = {
+  private[this] def read[K <: Message](input: String, keyClass: Class[K]): RDD[(K, NullWritable)] = {
 
     val hadoopConf = sc.hadoopConfiguration
     val job = Job.getInstance
@@ -36,10 +36,9 @@ class ProtobufRDDReader[K <: Message](val sc: SparkContext) extends AnyVal {
     }
   }
 
-  def read(input: String)(implicit ktag: ClassTag[K]): RDD[K] = {
-    read(input, ktag.runtimeClass).map { case (k, _) => k }
-  }
-
+  def read[K <: Message : ClassTag](input: String): RDD[K] =
+    read(input, classTag[K].runtimeClass.asInstanceOf[Class[K]])
+      .map { case (k, _) => k }
 }
 
 class PBInputFormat[K <: Message] extends FileInputFormat[K, NullWritable] {
