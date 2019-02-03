@@ -7,17 +7,23 @@ import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.fs.{Path,FSDataInputStream}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import com.google.protobuf.Message
+import com.google.protobuf.{Message, Parser}
 import java.util.UnknownFormatConversionException
+import java.io.InputStream
 import scala.reflect.{ClassTag, classTag}
 
 class ProtobufRDDReader(val sc: SparkContext) {
 
-  private[this] def read[K <: Message](input: String, keyClass: Class[K]): RDD[(K, NullWritable)] = {
+  private[this] def read[K <: Message](input: String, keyClass: Class[K],
+    parser: InputStream => K): RDD[(K, NullWritable)] = {
+
+    class SpecificProtobufInputFormat extends ProtobufInputFormat[K] {
+      val pbParser = parser
+    }
 
     val hadoopConf = sc.hadoopConfiguration
     val job = Job.getInstance
-    job.setInputFormatClass(classOf[ProtobufInputFormat[K]])
+    job.setInputFormatClass(classOf[SpecificProtobufInputFormat])
     val hadoopPath = new Path(input)
     FileInputFormat.setInputDirRecursive(job, true)
     hadoopConf.addResource(job.getConfiguration)
@@ -27,7 +33,7 @@ class ProtobufRDDReader(val sc: SparkContext) {
     // -- Amanj
     if (hadoopPath.getFileSystem(hadoopConf).exists(hadoopPath)) {
       sc.newAPIHadoopFile(input,
-                           classOf[ProtobufInputFormat[K]],
+                           classOf[SpecificProtobufInputFormat],
                            keyClass,
                            classOf[NullWritable],
                            hadoopConf)
@@ -36,23 +42,24 @@ class ProtobufRDDReader(val sc: SparkContext) {
     }
   }
 
-  def read[K <: Message : ClassTag](input: String): RDD[K] =
-    read(input, classTag[K].runtimeClass.asInstanceOf[Class[K]])
+  def read[K <: Message : ClassTag](input: String)(implicit parser: InputStream => K): RDD[K] =
+    read(input, classTag[K].runtimeClass.asInstanceOf[Class[K]], parser)
       .map { case (k, _) => k }
 }
 
-class ProtobufInputFormat[K <: Message] extends FileInputFormat[K, NullWritable] {
+trait ProtobufInputFormat[K <: Message] extends FileInputFormat[K, NullWritable] {
+  val pbParser: InputStream => K
   // Even though it might be not so efficient, we do not let hadoop/spark to
   // split protobuf files, that is how the record reader is set to work
   override def isSplitable(job: JobContext, path: Path): Boolean = false
 
   override def createRecordReader(split: InputSplit,
     context: TaskAttemptContext): RecordReader[K, NullWritable] = {
-    new ProtobufRecordReader
+    new ProtobufRecordReader[K](pbParser)
   }
 }
 
-class ProtobufRecordReader[K <: Message] extends RecordReader[K, NullWritable] {
+class ProtobufRecordReader[K <: Message](parser: InputStream => K) extends RecordReader[K, NullWritable] {
 
   protected var start: Long = _
   protected var end: Long   = _
@@ -78,7 +85,14 @@ class ProtobufRecordReader[K <: Message] extends RecordReader[K, NullWritable] {
         throw new IllegalArgumentException("Only FileSplit is supported")
     }
 
-  override def nextKeyValue(): Boolean = ???
+  override def nextKeyValue(): Boolean = {
+    val result = parser(in)
+    if(result == null) false
+    else {
+      key = result
+      true
+    }
+  }
 
   override def getCurrentKey(): K = key
 
@@ -86,7 +100,7 @@ class ProtobufRecordReader[K <: Message] extends RecordReader[K, NullWritable] {
 
   override def getProgress(): Float = {
     if (start == end) {
-        0.0f;
+        1.0f;
     } else {
         1.0f min ((pos - start) * 1.0f / (end - start))
     }
