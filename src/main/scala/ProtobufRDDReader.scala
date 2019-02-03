@@ -12,16 +12,13 @@ import java.util.UnknownFormatConversionException
 import java.io.InputStream
 import scala.reflect.{ClassTag, classTag}
 
-class ProtobufRDDReader[K <: Message : ClassTag](val sc: SparkContext, parser: InputStream => K) {
-  self =>
-  private[this] class SpecificProtobufInputFormat extends ProtobufInputFormat[K] {
-    val parser = self.parser
-  }
+class ProtobufRDDReader[K <: Message : ClassTag]
+      (val sc: SparkContext, inputFormatClass: Class[_ <: ProtobufInputFormat[K]]) {
 
   private[this] def read(input: String, keyClass: Class[K]): RDD[(K, NullWritable)] = {
     val hadoopConf = sc.hadoopConfiguration
     val job = Job.getInstance
-    job.setInputFormatClass(classOf[SpecificProtobufInputFormat])
+    job.setInputFormatClass(inputFormatClass)
     val hadoopPath = new Path(input)
     FileInputFormat.setInputDirRecursive(job, true)
     hadoopConf.addResource(job.getConfiguration)
@@ -31,7 +28,7 @@ class ProtobufRDDReader[K <: Message : ClassTag](val sc: SparkContext, parser: I
     // -- Amanj
     if (hadoopPath.getFileSystem(hadoopConf).exists(hadoopPath)) {
       sc.newAPIHadoopFile(input,
-                           classOf[SpecificProtobufInputFormat],
+                           inputFormatClass,
                            keyClass,
                            classOf[NullWritable],
                            hadoopConf)

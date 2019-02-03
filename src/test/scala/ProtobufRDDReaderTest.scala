@@ -5,8 +5,11 @@ import com.holdenkarau.spark.testing.{RDDComparisons, SharedSparkContext}
 import org.scalatest.{FunSuite, Matchers}
 import me.amanj.spark.proto.PairOuterClass.Pair
 
-import java.io.FileOutputStream
+import java.io.{InputStream, FileOutputStream}
 
+class PairProtobufInputFormat extends ProtobufInputFormat[Pair] {
+  val parser = (io: InputStream) => Pair.parseDelimitedFrom(io)
+}
 
 class ProtobufRDDReaderTest extends FunSuite with SharedSparkContext with RDDComparisons {
   test("Shall correctly load protobuf text files into an RDD") {
@@ -31,7 +34,7 @@ class ProtobufRDDReaderTest extends FunSuite with SharedSparkContext with RDDCom
 
     val expected: RDD[Pair] = sc.parallelize(values)
 
-    val actual: RDD[Pair] = new ProtobufRDDReader[Pair](sc, io => Pair.parseDelimitedFrom(io)).read("test")
+    val actual: RDD[Pair] = new ProtobufRDDReader[Pair](sc, classOf[PairProtobufInputFormat]).read("test")
 
     assertRDDEquals(expected, actual)
   }
