@@ -11,15 +11,13 @@ import com.google.protobuf.Message
 import java.util.UnknownFormatConversionException
 import scala.reflect.ClassTag
 
-object PBRDDReader {
+class ProtobufRDDReader[K <: Message](val sc: SparkContext) extends AnyVal {
 
-  private[this] def read[K <: Message, W <: FileInputFormat[K, NullWritable]](
-      ctx: SparkContext, input: String, keyClass: Class[K],
-      readerClass: Class[W]): RDD[(K, NullWritable)] = {
+  private[this] def read(input: String, keyClass: Class[K]): RDD[(K, NullWritable)] = {
 
-    val hadoopConf = ctx.hadoopConfiguration
+    val hadoopConf = sc.hadoopConfiguration
     val job = Job.getInstance
-    job.setInputFormatClass(readerClass)
+    job.setInputFormatClass(classOf[PBInputFormat[K]])
     val hadoopPath = new Path(input)
     FileInputFormat.setInputDirRecursive(job, true)
     hadoopConf.addResource(job.getConfiguration)
@@ -28,19 +26,18 @@ object PBRDDReader {
     // S3 and HDFS file systems.
     // -- Amanj
     if (hadoopPath.getFileSystem(hadoopConf).exists(hadoopPath)) {
-      ctx.newAPIHadoopFile(input,
-                           readerClass,
+      sc.newAPIHadoopFile(input,
+                           classOf[PBInputFormat[K]],
                            keyClass,
                            classOf[NullWritable],
                            hadoopConf)
     } else {
-      ctx.emptyRDD[(K, NullWritable)]
+      sc.emptyRDD[(K, NullWritable)]
     }
   }
 
-  def read[K <: Message](ctx: SparkContext, input: String)(implicit ktag: ClassTag[K]): RDD[K] = {
-    read[K, PBInputFormat[K]](ctx, input, ktag.runtimeClass,
-      classOf[PBInputFormat[K]]).map { case (k, _) => k }
+  def read(input: String)(implicit ktag: ClassTag[K]): RDD[K] = {
+    read(input, ktag.runtimeClass).map { case (k, _) => k }
   }
 
 }
