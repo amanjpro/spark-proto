@@ -12,33 +12,25 @@ import java.util.UnknownFormatConversionException
 import java.io.InputStream
 import scala.reflect.{ClassTag, classTag}
 
-class ProtobufRDDReader[K <: Message : ClassTag]
-      (val sc: SparkContext, inputFormatClass: Class[_ <: ProtobufInputFormat[K]]) {
+class ProtobufRDDReader[K <: Message : ClassTag](val sc: SparkContext) {
 
-  private[this] def read(input: String, keyClass: Class[K]): RDD[(K, NullWritable)] = {
+  private[this] def readImpl[F <: ProtobufInputFormat[K] : ClassTag]
+    (input: String): RDD[(K, NullWritable)] = {
     val hadoopConf = sc.hadoopConfiguration
-    val job = Job.getInstance
-    job.setInputFormatClass(inputFormatClass)
     val hadoopPath = new Path(input)
-    FileInputFormat.setInputDirRecursive(job, true)
-    hadoopConf.addResource(job.getConfiguration)
 
     // I need to get the FileSystem that stupid way to handle both
     // S3 and HDFS file systems.
     // -- Amanj
     if (hadoopPath.getFileSystem(hadoopConf).exists(hadoopPath)) {
-      sc.newAPIHadoopFile(input,
-                           inputFormatClass,
-                           keyClass,
-                           classOf[NullWritable],
-                           hadoopConf)
+      sc.newAPIHadoopFile(input)
     } else {
       sc.emptyRDD[(K, NullWritable)]
     }
   }
 
-  def read(input: String): RDD[K] =
-    read(input, classTag[K].runtimeClass.asInstanceOf[Class[K]])
+  def read[F <: ProtobufInputFormat[K] : ClassTag](input: String): RDD[K] =
+    readImpl(input)
       .map { case (k, _) => k }
 }
 

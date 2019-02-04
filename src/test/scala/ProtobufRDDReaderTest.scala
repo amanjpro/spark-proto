@@ -35,7 +35,9 @@ class ProtobufRDDReaderTest extends FunSuite with SharedSparkContext with RDDCom
 
     val expected: RDD[Pair] = sc.parallelize(values)
 
-    val actual: RDD[Pair] = sc.protobuf(classOf[PairProtobufInputFormat]).read("test")
+    val reader: ProtobufRDDReader[Pair] = sc.protobuf
+
+    val actual: RDD[Pair] = reader.read("test")
 
     assertRDDEquals(expected, actual)
   }
