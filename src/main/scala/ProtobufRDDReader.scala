@@ -12,10 +12,9 @@ import java.util.UnknownFormatConversionException
 import java.io.InputStream
 import scala.reflect.{ClassTag, classTag}
 
-class ProtobufRDDReader[K <: Message : ClassTag](val sc: SparkContext) {
+class ProtobufRDDReader[K <: Message : ClassTag, F <: ProtobufInputFormat[K] : ClassTag](val sc: SparkContext) {
 
-  private[this] def readImpl[F <: ProtobufInputFormat[K] : ClassTag]
-    (input: String): RDD[(K, NullWritable)] = {
+  private[this] def readImpl(input: String): RDD[(K, NullWritable)] = {
     val hadoopConf = sc.hadoopConfiguration
     val hadoopPath = new Path(input)
 
@@ -29,7 +28,7 @@ class ProtobufRDDReader[K <: Message : ClassTag](val sc: SparkContext) {
     }
   }
 
-  def read[F <: ProtobufInputFormat[K] : ClassTag](input: String): RDD[K] =
+  def read(input: String): RDD[K] =
     readImpl(input)
       .map { case (k, _) => k }
 }
