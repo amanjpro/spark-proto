@@ -11,10 +11,18 @@ import com.google.protobuf.{Message, Parser}
 import java.util.UnknownFormatConversionException
 import java.io.InputStream
 import scala.reflect.{ClassTag, classTag}
+import scala.reflect.runtime.universe.TypeTag
 
-class ProtobufRDDReader[K <: Message : ClassTag, F <: ProtobufInputFormat[K] : ClassTag](val sc: SparkContext) {
+class Protobuf[K <: Message : ClassTag](sc: SparkContext) {
+  def read[F <: ProtobufInputFormat[K] : ClassTag : TypeTag](path: String): RDD[K] = {
+    new ProtobufRDDReader[K](sc).read(path)
+  }
+}
 
-  private[this] def readImpl(input: String): RDD[(K, NullWritable)] = {
+class ProtobufRDDReader[K <: Message](sc: SparkContext)(implicit kTag: ClassTag[K]) {
+
+  private[this] def readImpl[F <: ProtobufInputFormat[K]](input: String)(implicit fTag: ClassTag[F]): RDD[(K, NullWritable)] = {
+    println(s"K: $kTag, F: $fTag")
     val hadoopConf = sc.hadoopConfiguration
     val hadoopPath = new Path(input)
 
@@ -28,13 +36,13 @@ class ProtobufRDDReader[K <: Message : ClassTag, F <: ProtobufInputFormat[K] : C
     }
   }
 
-  def read(input: String): RDD[K] =
+  def read[F <: ProtobufInputFormat[K]: ClassTag](input: String): RDD[K] =
     readImpl(input)
       .map { case (k, _) => k }
 }
 
 trait ProtobufInputFormat[K <: Message] extends FileInputFormat[K, NullWritable] {
-  val parser: InputStream => K
+  def parser: InputStream => K
   // Even though it might be not so efficient, we do not let hadoop/spark to
   // split protobuf files, that is how the record reader is set to work
   override def isSplitable(job: JobContext, path: Path): Boolean = false

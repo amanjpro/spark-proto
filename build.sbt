@@ -1,4 +1,6 @@
 
+scalacOptions := Seq("-Xlog-implicit-conversions", "-language:higherKinds")
+
 enablePlugins(ProtobufPlugin)
 
 version in ProtobufConfig := "3.6.0"
