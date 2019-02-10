@@ -6,43 +6,43 @@ import org.apache.hadoop.mapreduce.{TaskAttemptContext, RecordReader, InputSplit
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.fs.{Path,FSDataInputStream}
 import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
+import org.apache.spark.rdd.{RDD, SparkContextExt}
 import com.google.protobuf.{Message, Parser}
 import java.util.UnknownFormatConversionException
 import java.io.InputStream
 import scala.reflect.{ClassTag, classTag}
 import scala.reflect.runtime.universe.TypeTag
 
-class Protobuf[K <: Message : ClassTag](sc: SparkContext) {
-  def read[F <: ProtobufInputFormat[K] : ClassTag : TypeTag](path: String): RDD[K] = {
-    new ProtobufRDDReader[K](sc).read(path)
+class ProtobufRDDReader[K <: Message : ClassTag](sc: SparkContext, parser: InputStream => K) {
+  self =>
+
+  implicit class SparkContextExtImpl(val sc: SparkContext) extends SparkContextExt
+  private[this] val inputFormatConstructor: () => ProtobufInputFormat[K] = {
+    val localParser = parser
+    () => new ProtobufInputFormat(localParser)
   }
-}
 
-class ProtobufRDDReader[K <: Message](sc: SparkContext)(implicit kTag: ClassTag[K]) {
-
-  private[this] def readImpl[F <: ProtobufInputFormat[K]](input: String)(implicit fTag: ClassTag[F]): RDD[(K, NullWritable)] = {
-    println(s"K: $kTag, F: $fTag")
+  private[this] def readImpl(input: String): RDD[K] = {
     val hadoopConf = sc.hadoopConfiguration
     val hadoopPath = new Path(input)
 
     // I need to get the FileSystem that stupid way to handle both
     // S3 and HDFS file systems.
     // -- Amanj
+    val outerParser = parser
     if (hadoopPath.getFileSystem(hadoopConf).exists(hadoopPath)) {
-      sc.newAPIHadoopFile(input)
+      sc.newAPIProtobufFile(input, inputFormatConstructor)
     } else {
-      sc.emptyRDD[(K, NullWritable)]
+      sc.emptyRDD[K]
     }
   }
 
-  def read[F <: ProtobufInputFormat[K]: ClassTag](input: String): RDD[K] =
+  def read(input: String): RDD[K] =
     readImpl(input)
-      .map { case (k, _) => k }
 }
 
-trait ProtobufInputFormat[K <: Message] extends FileInputFormat[K, NullWritable] {
-  def parser: InputStream => K
+class ProtobufInputFormat[K <: Message](parser: InputStream => K)
+    extends FileInputFormat[K, NullWritable] with Serializable {
   // Even though it might be not so efficient, we do not let hadoop/spark to
   // split protobuf files, that is how the record reader is set to work
   override def isSplitable(job: JobContext, path: Path): Boolean = false

@@ -8,10 +8,6 @@ import me.amanj.spark.proto.reader.Implicits._
 
 import java.io.{InputStream, FileOutputStream}
 
-class PairProtobufInputFormat extends ProtobufInputFormat[Pair] {
-  val parser = (io: InputStream) => Pair.parseDelimitedFrom(io)
-}
-
 class ProtobufRDDReaderTest extends FunSuite with SharedSparkContext with RDDComparisons {
   test("Shall correctly load protobuf text files into an RDD") {
     val values = List(
@@ -35,7 +31,7 @@ class ProtobufRDDReaderTest extends FunSuite with SharedSparkContext with RDDCom
 
     val expected: RDD[Pair] = sc.parallelize(values)
 
-    val actual: RDD[Pair] = sc.protobuf("test")
+    val actual: RDD[Pair] = sc.protobuf(Pair.parseDelimitedFrom).read("test")
 
     assertRDDEquals(expected, actual)
   }
