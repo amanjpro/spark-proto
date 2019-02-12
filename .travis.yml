@@ -9,4 +9,4 @@ script:
   - sbt clean coverage test coverageReport package
 after_success:
   - export CODECOV_TOKEN="aea4724f-2852-4c76-bf19-51d0adaf6f05"
-  - bash < (curl -s https://codecov.io/bash)
+  - bash <(curl -s https://codecov.io/bash)
