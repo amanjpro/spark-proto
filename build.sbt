@@ -7,6 +7,8 @@ scalacOptions in ThisBuild ++= Seq(
   "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
 )
 
+skip in publish := true
+
 fork in Test := true
 
 javaOptions in ThisBuild ++= Seq("-Xms512M", "-Xmx2048M", "-XX:MaxPermSize=2048M", "-XX:+CMSClassUnloadingEnabled")
@@ -21,9 +23,10 @@ def mkSparkProject(sversion: String, sparkVersion: String) = {
   val Array(major, minor, _) = sversion.split('.')
   val projectId = s"spark_${sparkVersion}_${major}_$minor"
   Project(id = projectId, base = file(s"spark_$sparkVersion")).settings(Seq(
-    name := projectId,
+    name := s"spark_${sparkVersion}",
     scalaVersion := sversion,
 		target := baseDirectory.value / s"target-$sparkVersion-${scalaVersion.value}",
+		skip in publish := true,
     libraryDependencies :=
       Seq("org.apache.spark" %% "spark-core" % "2.2.3" % "provided")
   ))
@@ -33,8 +36,9 @@ def mkProtoProject(sversion: String, sparkVersion: String) = {
   val Array(major, minor, _) = sversion.split('.')
   val projectId = s"proto_${sparkVersion}_${major}_$minor"
   Project(id = projectId, base = file("proto")).settings(Seq(
-    name := projectId,
+    name := s"proto_${sparkVersion}",
     scalaVersion := sversion,
+		skip in publish := false,
 		sourceDirectory in ProtobufConfig := (sourceDirectory in Test).value / "protobuf",
 		protobufIncludePaths in ProtobufConfig += (sourceDirectory in ProtobufConfig).value,
 		version in ProtobufConfig := "3.6.0",
