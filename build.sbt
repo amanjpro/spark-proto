@@ -9,6 +9,8 @@ scalacOptions in ThisBuild ++= Seq(
   "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
 )
 
+licenses in ThisBuild += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
+
 skip in publish := true
 
 fork in Test := true
@@ -25,7 +27,7 @@ def mkSparkProject(sversion: String, sparkVersion: String) = {
   val Array(major, minor, _) = sversion.split('.')
   val projectId = s"spark_${sparkVersion}_${major}_$minor"
   Project(id = projectId, base = file(s"spark_$sparkVersion")).settings(Seq(
-    name := s"proto_${sparkVersion.replaceAll("_", ".")}",
+    name := s"spark_${sparkVersion.replaceAll("_", ".")}",
     scalaVersion := sversion,
 		target := baseDirectory.value / s"target-$sparkVersion-${scalaVersion.value}",
 		skip in publish := true,
@@ -37,14 +39,13 @@ def mkProtoProject(sversion: String, sparkVersion: String) = {
   val Array(major, minor, _) = sversion.split('.')
   val projectId = s"proto_${sparkVersion}_${major}_$minor"
   Project(id = projectId, base = file("proto")).settings(Seq(
-    name := s"proto_${sparkVersion.replaceAll("_", ".")}",
+    name := s"spark-proto_${sparkVersion.replaceAll("_", ".")}",
     scalaVersion := sversion,
 		skip in publish := false,
 		sourceDirectory in ProtobufConfig := (sourceDirectory in Test).value / "protobuf",
 		protobufIncludePaths in ProtobufConfig += (sourceDirectory in ProtobufConfig).value,
 		version in ProtobufConfig := "3.6.0",
 		target := baseDirectory.value / s"target-$sparkVersion-${scalaVersion.value}",
-    licenses += ("MIT", url("https://opensource.org/licenses/Apache-2.0")),
     publishMavenStyle := false,
 		bintrayRepository := "maven",
 		bintrayOrganization in bintray := None,
