@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-package me.amanj.spark.proto;
-
-message Pair {
-  string first = 1;
-  int32 second = 2;
-}

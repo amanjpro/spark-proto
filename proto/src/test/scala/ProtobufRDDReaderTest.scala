@@ -1,16 +1,27 @@
+/*
+ * Licensed to Amanj Sherwany <<http://amanj.m>>
+ *
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package me.amanj.spark.proto.reader
 
 import org.apache.spark.rdd.RDD
 import com.holdenkarau.spark.testing.{RDDComparisons, SharedSparkContext}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.FunSuite
 import me.amanj.spark.proto.PairOuterClass.Pair
-import me.amanj.spark.proto.reader.Implicits._
+import me.amanj.spark.proto.Implicits._
 
-import java.io.{InputStream, FileOutputStream}
-
-class PairProtobufInputFormat extends ProtobufInputFormat[Pair] {
-  val parser = (io: InputStream) => Pair.parseDelimitedFrom(io)
-}
+import java.io.FileOutputStream
 
 class ProtobufRDDReaderTest extends FunSuite with SharedSparkContext with RDDComparisons {
   test("Shall correctly load protobuf text files into an RDD") {
@@ -35,7 +46,7 @@ class ProtobufRDDReaderTest extends FunSuite with SharedSparkContext with RDDCom
 
     val expected: RDD[Pair] = sc.parallelize(values)
 
-    val actual: RDD[Pair] = sc.protobuf(classOf[PairProtobufInputFormat]).read("test")
+    val actual: RDD[Pair] = sc.protobuf(Pair.parseDelimitedFrom).read("test")
 
     assertRDDEquals(expected, actual)
   }
