@@ -31,7 +31,7 @@ def mkSparkProject(sversion: String, sparkVersion: String) = {
     scalaVersion := sversion,
 		target := baseDirectory.value / s"target-$sparkVersion-${scalaVersion.value}",
 		skip in publish := true,
-    libraryDependencies := getSparkDependencies(sparkVersion)
+    libraryDependencies ++= getSparkDependencies(sparkVersion)
   ))
 }
 
@@ -49,7 +49,7 @@ def mkProtoProject(sversion: String, sparkVersion: String) = {
     publishMavenStyle := false,
 		bintrayRepository := "maven",
 		bintrayOrganization in bintray := None,
-    libraryDependencies := Seq(
+    libraryDependencies ++= Seq(
       "org.scalatest" %% "scalatest" % "3.0.5" % "test",
       "com.google.protobuf" % "protobuf-java" % "3.6.1",
       "org.scalatest" %% "scalatest" % "3.0.5" % Test) ++ getSparkDependencies(sparkVersion)
