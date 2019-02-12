@@ -27,8 +27,7 @@ def mkSparkProject(sversion: String, sparkVersion: String) = {
     scalaVersion := sversion,
 		target := baseDirectory.value / s"target-$sparkVersion-${scalaVersion.value}",
 		skip in publish := true,
-    libraryDependencies :=
-      Seq("org.apache.spark" %% "spark-core" % "2.2.3" % "provided")
+    libraryDependencies := getSparkDependencies(sparkVersion)
   ))
 }
 
@@ -56,3 +55,5 @@ lazy val spark_210_22 = mkSparkProject("2.10.7", "2_2")
 lazy val proto_211_22 = mkProtoProject("2.11.12", "2_2").dependsOn(spark_211_22)
 lazy val proto_210_22 = mkProtoProject("2.10.7", "2_2").dependsOn(spark_210_22)
 
+unmanagedClasspath in Compile ++=
+  update.value.select(configurationFilter("compileonly"))
