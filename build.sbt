@@ -1,6 +1,6 @@
 organization in ThisBuild := "me.amanj"
 
-version in ThisBuild := "0.0.2"
+version in ThisBuild := "0.0.3-SNAPSHOT"
 
 scalacOptions in ThisBuild ++= Seq(
   "-deprecation",                      // Emit warning and location for usages of deprecated APIs.
