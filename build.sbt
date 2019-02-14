@@ -32,6 +32,7 @@ def mkSparkProject(sversion: String, sparkVersion: String) = {
   Project(id = projectId, base = file(s"spark_${sparkVersion.replaceAll("[.]", "_")}")).settings(Seq(
     name := s"spark_$sparkVersion",
     scalaVersion := sversion,
+    coverageEnabled := false,
     target := baseDirectory.value / s"target-$sparkVersion-${scalaVersion.value}",
     skip in publish := true,
     libraryDependencies ++= getSparkDependencies(sparkVersion)
