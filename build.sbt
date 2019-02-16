@@ -1,6 +1,6 @@
 organization in ThisBuild := "me.amanj"
 
-version in ThisBuild := "0.0.3-SNAPSHOT"
+version in ThisBuild := "0.0.3"
 
 scalacOptions in ThisBuild ++= Seq(
   "-deprecation",                      // Emit warning and location for usages of deprecated APIs.
@@ -11,9 +11,12 @@ scalacOptions in ThisBuild ++= Seq(
 
 licenses in ThisBuild += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
 
-skip in publish := true
 
 fork in Test in ThisBuild := true
+
+disablePlugins(BintrayPlugin)
+
+skip in publish := true
 
 javaOptions in ThisBuild ++= Seq("-Xms512M", "-Xmx2048M", "-XX:MaxPermSize=2048M", "-XX:+CMSClassUnloadingEnabled")
 
@@ -29,34 +32,39 @@ def getSparkDependencies(sparkVersion: String) = sparkVersion match {
 def mkSparkProject(sversion: String, sparkVersion: String) = {
   val Array(major, minor, _) = sversion.split('.')
   val projectId = s"spark_${sparkVersion.replaceAll("[.]", "_")}_${major}_$minor"
-  Project(id = projectId, base = file(s"spark_${sparkVersion.replaceAll("[.]", "_")}")).settings(Seq(
-    name := s"spark_$sparkVersion",
+  val projectBase = s"spark_${sparkVersion.replaceAll("[.]", "_")}"
+  val projectName = s"spark_${sparkVersion.replaceAll("[.]", "_")}_${major}.$minor"
+  val projectTarget = s"target-$sparkVersion-$sversion"
+  Project(id = projectId, base = file(projectBase)).settings(Seq(
+    name := projectName,
     scalaVersion := sversion,
     coverageEnabled := false,
-    target := baseDirectory.value / s"target-$sparkVersion-${scalaVersion.value}",
     skip in publish := true,
+    target := baseDirectory.value / projectTarget,
     libraryDependencies ++= getSparkDependencies(sparkVersion)
-  ))
+  )).disablePlugins(BintrayPlugin)
 }
 
 def mkProtoProject(sversion: String, sparkVersion: String) = {
   val Array(major, minor, _) = sversion.split('.')
   val projectId = s"proto_${sparkVersion.replaceAll("[.]", "_")}_${major}_$minor"
-  println(projectId)
+  val projectName = s"spark-proto_${sparkVersion.replaceAll("[.]", "_")}_${major}.$minor"
+  val projectTarget = s"target-$sparkVersion-$sversion"
   Project(id = projectId, base = file("proto")).settings(Seq(
-    name := s"spark-proto_$sparkVersion",
+    name := projectName,
     scalaVersion := sversion,
     skip in publish := false,
     sourceDirectory in ProtobufConfig := (sourceDirectory in Test).value / "protobuf",
     protobufIncludePaths in ProtobufConfig += (sourceDirectory in ProtobufConfig).value,
-    version in ProtobufConfig := "3.6.0",
-    target := baseDirectory.value / s"target-$sparkVersion-${scalaVersion.value}",
+    version in ProtobufConfig := "3.6.1",
+    target := baseDirectory.value / projectTarget,
+    crossPaths in ThisBuild := true,
     bintrayRepository := "maven",
     bintrayOrganization in bintray := None,
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
       "com.google.protobuf" % "protobuf-java" % "3.6.1") ++ getSparkDependencies(sparkVersion)
-  )).enablePlugins(ProtobufPlugin)
+  )).enablePlugins(ProtobufPlugin, BintrayPlugin)
 }
 
 // Spark 1.6.x
