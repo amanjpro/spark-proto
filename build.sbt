@@ -18,6 +18,10 @@ disablePlugins(BintrayPlugin)
 
 skip in publish := true
 
+scalaVersion in ThisBuild := "2.11.12"
+
+crossScalaVersions in ThisBuild := Seq("2.11.12", "2.10.7")
+
 javaOptions in ThisBuild ++= Seq("-Xms512M", "-Xmx2048M", "-XX:MaxPermSize=2048M", "-XX:+CMSClassUnloadingEnabled")
 
 def getSparkDependencies(sparkVersion: String) = sparkVersion match {
@@ -29,29 +33,26 @@ def getSparkDependencies(sparkVersion: String) = sparkVersion match {
     "com.holdenkarau" %% "spark-testing-base" % "1.6.1_0.10.0" % Test)
 }
 
-def mkSparkProject(sversion: String, sparkVersion: String) = {
-  val Array(major, minor, _) = sversion.split('.')
-  val projectId = s"spark_${sparkVersion.replaceAll("[.]", "_")}_${major}_$minor"
-  val projectBase = s"spark_${sparkVersion.replaceAll("[.]", "_")}"
-  val projectName = s"spark_${sparkVersion.replaceAll("[.]", "_")}_${major}.$minor"
-  val projectTarget = s"target-$sparkVersion-$sversion"
+def mkSparkProject(sparkVersion: String) = {
+  val projectId = s"spark_${sparkVersion.replaceAll("[.]", "_")}"
+  val projectBase = projectId
+  val projectName = projectId
+  val projectTarget = s"target-$sparkVersion"
   Project(id = projectId, base = file(projectBase)).settings(Seq(
     name := projectName,
-    scalaVersion := sversion,
     skip in publish := true,
+    crossPaths in ThisBuild := true,
     target := baseDirectory.value / projectTarget,
     libraryDependencies ++= getSparkDependencies(sparkVersion)
   )).disablePlugins(BintrayPlugin)
 }
 
-def mkProtoProject(sversion: String, sparkVersion: String) = {
-  val Array(major, minor, _) = sversion.split('.')
-  val projectId = s"proto_${sparkVersion.replaceAll("[.]", "_")}_${major}_$minor"
-  val projectName = s"spark-proto_${sparkVersion.replaceAll("[.]", "_")}_${major}.$minor"
-  val projectTarget = s"target-$sparkVersion-$sversion"
+def mkProtoProject(sparkVersion: String) = {
+  val projectId = s"proto_${sparkVersion.replaceAll("[.]", "_")}"
+  val projectName = s"spark-$projectId"
+  val projectTarget = s"target-$sparkVersion"
   Project(id = projectId, base = file("proto")).settings(Seq(
     name := projectName,
-    scalaVersion := sversion,
     skip in publish := false,
     sourceDirectory in ProtobufConfig := (sourceDirectory in Test).value / "protobuf",
     protobufIncludePaths in ProtobufConfig += (sourceDirectory in ProtobufConfig).value,
@@ -67,15 +68,9 @@ def mkProtoProject(sversion: String, sparkVersion: String) = {
 }
 
 // Spark 1.6.x
-lazy val spark_211_16 = mkSparkProject("2.11.12", "1.6")
-lazy val proto_211_16 = mkProtoProject("2.11.12", "1.6").dependsOn(spark_211_16)
-
-lazy val spark_210_16 = mkSparkProject("2.10.7", "1.6")
-lazy val proto_210_16 = mkProtoProject("2.10.7", "1.6").dependsOn(spark_210_16)
+lazy val spark_1_6 = mkSparkProject("1.6")
+lazy val proto_1_6 = mkProtoProject("1.6").dependsOn(spark_1_6)
 
 // Spark 2.2.x
-lazy val spark_211_22 = mkSparkProject("2.11.12", "2.2")
-lazy val proto_211_22 = mkProtoProject("2.11.12", "2.2").dependsOn(spark_211_22)
-
-lazy val spark_210_22 = mkSparkProject("2.10.7", "2.2")
-lazy val proto_210_22 = mkProtoProject("2.10.7", "2.2").dependsOn(spark_210_22)
+lazy val spark_2_2 = mkSparkProject("2.2")
+lazy val proto_2_2 = mkProtoProject("2.2").dependsOn(spark_2_2)
