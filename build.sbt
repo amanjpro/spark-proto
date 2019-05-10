@@ -27,10 +27,13 @@ javaOptions in ThisBuild ++= Seq("-Xms512M", "-Xmx2048M", "-XX:MaxPermSize=2048M
 def getSparkDependencies(sparkVersion: String) = sparkVersion match {
   case "2.2"=>
     Seq("org.apache.spark" %% "spark-core" % "2.2.3",
-    "com.holdenkarau" %% "spark-testing-base" % "2.2.1_0.10.0" % Test)
+    "com.holdenkarau" %% "spark-testing-base" % "2.2.2_0.11.0" % Test)
+  case "2.1"=>
+    Seq("org.apache.spark" %% "spark-core" % "2.1.3",
+    "com.holdenkarau" %% "spark-testing-base" % "2.1.3_0.11.0" % Test)
   case "1.6"=>
     Seq("org.apache.spark" %% "spark-core" % "1.6.3",
-    "com.holdenkarau" %% "spark-testing-base" % "1.6.1_0.10.0" % Test)
+    "com.holdenkarau" %% "spark-testing-base" % "1.6.3_0.11.0" % Test)
 }
 
 def mkSparkProject(sparkVersion: String) = {
@@ -74,3 +77,7 @@ lazy val proto_1_6 = mkProtoProject("1.6").dependsOn(spark_1_6)
 // Spark 2.2.x
 lazy val spark_2_2 = mkSparkProject("2.2")
 lazy val proto_2_2 = mkProtoProject("2.2").dependsOn(spark_2_2)
+
+// Spark 2.1.x
+lazy val spark_2_1 = mkSparkProject("2.1")
+lazy val proto_2_1 = mkProtoProject("2.1").dependsOn(spark_2_1)
