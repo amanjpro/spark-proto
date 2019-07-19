@@ -25,6 +25,9 @@ crossScalaVersions in ThisBuild := Seq("2.11.12", "2.10.7")
 javaOptions in ThisBuild ++= Seq("-Xms512M", "-Xmx2048M", "-XX:MaxPermSize=2048M", "-XX:+CMSClassUnloadingEnabled")
 
 def getSparkDependencies(sparkVersion: String) = sparkVersion match {
+  case "2.3"=>
+    Seq("org.apache.spark" %% "spark-core" % "2.3.3",
+    "com.holdenkarau" %% "spark-testing-base" % "2.3.2_0.11.0" % Test)
   case "2.2"=>
     Seq("org.apache.spark" %% "spark-core" % "2.2.3",
     "com.holdenkarau" %% "spark-testing-base" % "2.2.2_0.11.0" % Test)
@@ -88,3 +91,7 @@ lazy val proto_2_0 = mkProtoProject("2.0").dependsOn(spark_2_0)
 // Spark 2.1.x
 lazy val spark_2_1 = mkSparkProject("2.1")
 lazy val proto_2_1 = mkProtoProject("2.1").dependsOn(spark_2_1)
+
+// Spark 2.4.x
+lazy val spark_2_3 = mkSparkProject("2.3")
+lazy val proto_2_3 = mkProtoProject("2.3").dependsOn(spark_2_3)
