@@ -70,12 +70,11 @@ class ProtobufHadoopRDD[K <: Message, F <: FileInputFormat[K, NullWritable]](
       private val inputMetrics = context.taskMetrics().inputMetrics
       private val existingBytesRead = inputMetrics.bytesRead
 
-      // Sets InputFileBlockHolder for the file block's information
+      // Sets the thread local variable for the file's name
       split.serializableHadoopSplit.value match {
         case fs: FileSplit =>
-          InputFileBlockHolder.set(fs.getPath.toString, fs.getStart, fs.getLength)
-        case _ =>
-          InputFileBlockHolder.unset()
+          InputFileNameHolder.setInputFileName(fs.getPath.toString)
+        case _ => InputFileNameHolder.unsetInputFileName()
       }
 
       // Find a function that will return the FileSystem bytes read by this thread. Do this before
@@ -83,12 +82,13 @@ class ProtobufHadoopRDD[K <: Message, F <: FileInputFormat[K, NullWritable]](
       private val getBytesReadCallback: Option[() => Long] =
         split.serializableHadoopSplit.value match {
           case _: FileSplit | _: CombineFileSplit =>
-            Some(SparkHadoopUtil.get.getFSBytesReadOnThreadCallback())
+            SparkHadoopUtil.get.getFSBytesReadOnThreadCallback()
           case _ => None
         }
 
-      // We get our input bytes from thread-local Hadoop FileSystem statistics.
-      // If we do a coalesce, however, we are likely to compute multiple partitions in the same
+      // For Hadoop 2.5+, we get our input bytes from thread-local Hadoop
+      // FileSystem statistics.  If we do a coalesce, however, we are likely to
+      // compute multiple partitions in the same
       // task and in the same thread, in which case we need to avoid override values written by
       // previous partitions (SPARK-13071).
       private def updateBytesRead(): Unit = {
@@ -168,9 +168,13 @@ class ProtobufHadoopRDD[K <: Message, F <: FileInputFormat[K, NullWritable]](
         (reader.getCurrentKey, reader.getCurrentValue)
       }
 
-      private def close(): Unit = {
+     private def close() {
         if (reader != null) {
-          InputFileBlockHolder.unset()
+          InputFileNameHolder.unsetInputFileName()
+          // Close the reader and release it. Note: it's very important that we don't close the
+          // reader more than once, since that exposes us to MAPREDUCE-5918 when running against
+          // Hadoop 1.x and older Hadoop 2.x releases. That bug can lead to non-deterministic
+          // corruption issues when reading compressed input.
           try {
             reader.close()
           } catch {
