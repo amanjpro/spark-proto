@@ -50,4 +50,40 @@ class ProtobufRDDReaderTest extends FunSuite with SharedSparkContext with RDDCom
 
     assertRDDEquals(expected, actual)
   }
+
+
+  test("getProgress should work when start and end are the same") {
+    val recordReader = new ProtobufRecordReader[Pair](_ => null) {
+      start = 10
+      end = 10
+    }
+    assert(recordReader.getProgress(), 1.0f)
+  }
+
+  test("getProgress should work when midway") {
+    val recordReader = new ProtobufRecordReader[Pair](_ => null) {
+      start = 0
+      end = 10
+      pos = 5
+    }
+    assert(recordReader.getProgress(), 0.5f)
+  }
+
+  test("getProgress should work when done") {
+    val recordReader = new ProtobufRecordReader[Pair](_ => null) {
+      start = 0
+      end = 10
+      pos = 10
+    }
+    assert(recordReader.getProgress(), 1.0f)
+  }
+
+  test("getProgress should work when it has not started") {
+    val recordReader = new ProtobufRecordReader[Pair](_ => null) {
+      start = 0
+      end = 10
+      pos = 0
+    }
+    assert(recordReader.getProgress(), 0.0f)
+  }
 }
