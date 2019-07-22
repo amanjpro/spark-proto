@@ -17,6 +17,8 @@ fork in Test in ThisBuild := true
 
 disablePlugins(BintrayPlugin)
 
+coverageEnabled in ThisBuild := false
+
 skip in publish := true
 
 val SCALA_211 = "2.11.12"
@@ -75,6 +77,9 @@ def mkProtoProject(sparkVersion: String, scalaVersionStr: String) = {
     sourceDirectory in ProtobufConfig := (sourceDirectory in Test).value / "protobuf",
     protobufIncludePaths in ProtobufConfig += (sourceDirectory in ProtobufConfig).value,
     version in ProtobufConfig := "3.6.1",
+    coverageEnabled := true,
+    coverageMinimum := 80,
+    coverageFailOnMinimum := true,
     target := baseDirectory.value / projectTarget,
     bintrayRepository := "maven",
     bintrayOrganization in bintray := None,
