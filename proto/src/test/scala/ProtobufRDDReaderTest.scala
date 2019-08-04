@@ -21,10 +21,19 @@ import org.scalatest.FunSuite
 import me.amanj.spark.proto.PairOuterClass.Pair
 import me.amanj.spark.proto.Implicits._
 
-import java.io.FileOutputStream
+import java.io.{FileOutputStream, File}
+import org.scalatest.BeforeAndAfterEach
+import java.nio.file.Files
 
-class ProtobufRDDReaderTest extends FunSuite with SharedSparkContext with RDDComparisons {
-  test("Shall correctly load protobuf text files into an RDD") {
+class ProtobufRDDReaderTest extends FunSuite
+  with SharedSparkContext with RDDComparisons with BeforeAndAfterEach {
+  val output: String = "spark-proto-test"
+
+  override def afterEach(): Unit = {
+    new File(output).delete()
+  }
+
+  test("Shall correctly load protobuf files into an RDD") {
     val values = List(
         ("one", 1),
         ("two", 2),
@@ -38,7 +47,7 @@ class ProtobufRDDReaderTest extends FunSuite with SharedSparkContext with RDDCom
           .build
       }
 
-    val dos = new FileOutputStream("test")
+    val dos = new FileOutputStream(output)
     values.foreach { pb =>
       pb.writeDelimitedTo(dos)
     }
@@ -46,7 +55,7 @@ class ProtobufRDDReaderTest extends FunSuite with SharedSparkContext with RDDCom
 
     val expected: RDD[Pair] = sc.parallelize(values)
 
-    val actual: RDD[Pair] = sc.protobuf(Pair.parseDelimitedFrom).read("test")
+    val actual: RDD[Pair] = sc.protobuf(Pair.parseDelimitedFrom).read(output)
 
     assertRDDEquals(expected, actual)
   }
