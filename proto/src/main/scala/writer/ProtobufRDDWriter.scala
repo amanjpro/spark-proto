@@ -13,25 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.amanj.spark.proto
+package me.amanj.spark.proto.writer
 
-import me.amanj.spark.proto.reader.ProtobufRDDReader
-import me.amanj.spark.proto.writer.ProtobufRDDWriter
-import com.google.protobuf.Message
 import org.apache.spark.SparkContext
+import org.apache.hadoop.io.NullWritable
+import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.rdd.RDD
-import scala.reflect.ClassTag
-import java.io.InputStream
+import com.google.protobuf.Message
+import scala.reflect.{ClassTag, classTag}
 
-object Implicits {
+class ProtobufRDDWriter[K <: Message : ClassTag](rdd: RDD[K]) {
+  def write(output: String): Unit = {
+    val ctx = rdd.sparkContext
+    val job = Job.getInstance(ctx.hadoopConfiguration)
+    val conf = job.getConfiguration
 
-  implicit class SparkContextExt(val sc: SparkContext) {
-    def protobuf[K <: Message : ClassTag](parser: InputStream => K): ProtobufRDDReader[K] =
-      new ProtobufRDDReader(sc, parser)
-  }
-
-  implicit class RDDExt[K <: Message : ClassTag](val rdd: RDD[K]) {
-    val protobuf: ProtobufRDDWriter[K] = new ProtobufRDDWriter(rdd)
+    rdd.map((_, NullWritable.get))
+      .saveAsNewAPIHadoopFile(output,
+        classTag[K].runtimeClass,
+        classOf[NullWritable],
+        classOf[ProtobufOutputFormat[K]],
+        conf)
   }
 }
+
 
