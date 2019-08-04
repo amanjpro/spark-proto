@@ -104,7 +104,7 @@ To run the tests, you should run `sbt test`, to compile run `sbt compile`.
 ## LICENSE
 
 ```
-Licensed to Amanj Sherwany <<http://amanj.m>>
+Licensed to Amanj Sherwany <<http://amanj.me>>
 
 The ASF licenses this file to You under the Apache License, Version 2.0
 (the "License"); you may not use this file except in compliance with
