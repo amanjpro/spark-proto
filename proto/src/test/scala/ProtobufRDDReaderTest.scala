@@ -27,7 +27,11 @@ import java.nio.file.Files
 
 class ProtobufRDDReaderTest extends FunSuite
   with SharedSparkContext with RDDComparisons with BeforeAndAfterEach {
-  val output: String = "spark-proto-test"
+  var output: String = _
+
+  override def beforeEach(): Unit = {
+    output = Files.createTempDirectory("spark-proto").toString
+  }
 
   override def afterEach(): Unit = {
     new File(output).delete()
@@ -47,7 +51,7 @@ class ProtobufRDDReaderTest extends FunSuite
           .build
       }
 
-    val dos = new FileOutputStream(output)
+    val dos = new FileOutputStream(s"$output/part-00000.pb")
     values.foreach { pb =>
       pb.writeDelimitedTo(dos)
     }

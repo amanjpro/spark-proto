@@ -28,7 +28,11 @@ import java.io.{FileOutputStream, File}
 
 class ProtobufRDDWriterTest extends FunSuite
     with SharedSparkContext with RDDComparisons with BeforeAndAfterEach {
-  val output: String = "spark-proto-test"
+  var output: String = _
+
+  override def beforeEach(): Unit = {
+    output = Files.createTempDirectory("spark-proto").toString
+  }
 
   override def afterEach(): Unit = {
     new File(output).delete()
@@ -50,8 +54,8 @@ class ProtobufRDDWriterTest extends FunSuite
 
     val expected: RDD[Pair] = sc.parallelize(values)
 
-    expected.protobuf.write(output)
-    val actual: RDD[Pair] = sc.protobuf(Pair.parseDelimitedFrom).read(output)
+    expected.protobuf.write(s"$output/writer")
+    val actual: RDD[Pair] = sc.protobuf(Pair.parseDelimitedFrom).read(s"$output/writer")
 
     assertRDDEquals(expected, actual)
   }
