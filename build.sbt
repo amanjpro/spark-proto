@@ -68,8 +68,8 @@ def mkSparkProject(sparkVersion: String, scalaVersionStr: String) = {
 
 def mkProtoProject(sparkVersion: String, scalaVersionStr: String) = {
   val scalaMajorMinor = scalaVersionStr.replaceAll("\\.[0-9]+$", "")
-  val projectId = s"proto_${sparkVersion.replaceAll("[.]", "_")}_${scalaMajorMinor.replaceAll("[.]", "_")}"
-  val projectName = s"proto_${sparkVersion}"
+  val projectName = s"spark-proto_${sparkVersion}"
+  val projectId = s"${projectName.replaceAll("[.]", "_")}_${scalaMajorMinor.replaceAll("[.]", "_")}"
   val projectTarget = s"target-${sparkVersion}_$scalaMajorMinor"
   val proj = Project(id = projectId, base = file("proto")).settings(Seq(
     name := projectName,
