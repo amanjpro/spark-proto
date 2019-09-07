@@ -76,7 +76,7 @@ def mkProtoProject(sparkVersion: String, scalaVersionStr: String) = {
     skip in publish := false,
     sourceDirectory in ProtobufConfig := (sourceDirectory in Test).value / "protobuf",
     protobufIncludePaths in ProtobufConfig += (sourceDirectory in ProtobufConfig).value,
-    version in ProtobufConfig := "3.6.1",
+    version in ProtobufConfig := "3.9.1",
     coverageEnabled := true,
     coverageMinimum := 80,
     coverageFailOnMinimum := true,
@@ -85,7 +85,7 @@ def mkProtoProject(sparkVersion: String, scalaVersionStr: String) = {
     bintrayOrganization in bintray := None,
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
-      "com.google.protobuf" % "protobuf-java" % "3.6.1") ++
+      "com.google.protobuf" % "protobuf-java" % "3.9.1") ++
         getSparkDependencies(sparkVersion, scalaVersionStr)
   )).enablePlugins(ProtobufPlugin, BintrayPlugin)
 
