@@ -68,15 +68,15 @@ def mkSparkProject(sparkVersion: String, scalaVersionStr: String) = {
 
 def mkProtoProject(sparkVersion: String, scalaVersionStr: String) = {
   val scalaMajorMinor = scalaVersionStr.replaceAll("\\.[0-9]+$", "")
-  val projectId = s"proto_${sparkVersion.replaceAll("[.]", "_")}_${scalaMajorMinor.replaceAll("[.]", "_")}"
-  val projectName = s"proto_${sparkVersion}"
+  val projectName = s"spark-proto_${sparkVersion}"
+  val projectId = s"${projectName.replaceAll("[.]", "_")}_${scalaMajorMinor.replaceAll("[.]", "_")}"
   val projectTarget = s"target-${sparkVersion}_$scalaMajorMinor"
   val proj = Project(id = projectId, base = file("proto")).settings(Seq(
     name := projectName,
     skip in publish := false,
     sourceDirectory in ProtobufConfig := (sourceDirectory in Test).value / "protobuf",
     protobufIncludePaths in ProtobufConfig += (sourceDirectory in ProtobufConfig).value,
-    version in ProtobufConfig := "3.6.1",
+    version in ProtobufConfig := "3.9.1",
     coverageEnabled := true,
     coverageMinimum := 80,
     coverageFailOnMinimum := true,
@@ -85,7 +85,7 @@ def mkProtoProject(sparkVersion: String, scalaVersionStr: String) = {
     bintrayOrganization in bintray := None,
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
-      "com.google.protobuf" % "protobuf-java" % "3.6.1") ++
+      "com.google.protobuf" % "protobuf-java" % "3.9.1") ++
         getSparkDependencies(sparkVersion, scalaVersionStr)
   )).enablePlugins(ProtobufPlugin, BintrayPlugin)
 
